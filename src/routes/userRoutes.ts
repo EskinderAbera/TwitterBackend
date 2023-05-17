@@ -51,8 +51,6 @@ router.put("/:id", async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: "Failed to update the user" });
   }
-
-  // res.status(501).json({ error: `Not Implemented: ${id}` });
 });
 
 // delete User
