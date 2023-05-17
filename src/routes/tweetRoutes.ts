@@ -49,7 +49,10 @@ router.get("/", async (req, res) => {
 // get one Tweet
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
-  const tweet = await prisma.tweet.findUnique({ where: { id: Number(id) } });
+  const tweet = await prisma.tweet.findUnique({
+    where: { id: Number(id) },
+    include: { user: true },
+  });
   if (!tweet) {
     return res.status(404).json({ error: "Tweet don't exist!" });
   }
