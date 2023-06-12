@@ -1,26 +1,32 @@
-import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router, Request, Response } from "express";
+import { PrismaClient, User } from "@prisma/client";
 
 const router = Router();
 const prisma = new PrismaClient();
 
+type AuthRequest = Request & { user?: User };
+
 // Tweet CRUD
-
 // create Tweet
-router.post("/", async (req, res) => {
-  const { content, image, userId } = req.body;
+router.post("/", async (req: AuthRequest, res: Response) => {
+  const { content, image } = req.body;
 
-  try {
-    const result = await prisma.tweet.create({
-      data: {
-        content,
-        image,
-        userId, //TODO manage based on the auth user
-      },
-    });
-    res.status(201).json(result);
-  } catch (error) {
-    res.status(400).json({ error: "Username and email should be unique" });
+  const user = req.user;
+  if (user)
+    try {
+      const result = await prisma.tweet.create({
+        data: {
+          content,
+          image,
+          userId: user.id,
+        },
+      });
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(400).json({ error: "Username and email should be unique" });
+    }
+  else {
+    return res.sendStatus(401);
   }
 });
 
@@ -30,18 +36,6 @@ router.get("/", async (req, res) => {
     include: {
       user: { select: { id: true, username: true, name: true, image: true } },
     },
-    // select: {
-    //   id: true,
-    //   content: true,
-    //   user: {
-    //     select: {
-    //       id: true,
-    //       name: true,
-    //       image: true,
-    //       username: true,
-    //     },
-    //   },
-    // },
   });
   res.json(allTweets);
 });

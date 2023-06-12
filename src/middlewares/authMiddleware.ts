@@ -1,0 +1,40 @@
+import { PrismaClient, User } from "@prisma/client";
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "super env";
+
+const prisma = new PrismaClient();
+
+// define types for req
+type AuthRequest = Request & { user?: User };
+
+export async function authenticateToken(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  // authentication
+  const authHeader = req.headers["authorization"];
+  const jwtToken = authHeader?.split(" ")[1];
+  if (!jwtToken) {
+    return res.sendStatus(401);
+  }
+  try {
+    const payload = jwt.verify(jwtToken, JWT_SECRET) as { tokenId: number };
+    if (!payload?.tokenId) {
+      return res.sendStatus(401);
+    }
+    const dbToken = await prisma.token.findUnique({
+      where: { id: payload.tokenId },
+      include: { user: true },
+    });
+    if (!dbToken?.valid || dbToken?.expiration < new Date()) {
+      return res.status(401).json({ error: "API token expired." });
+    }
+    req.user = dbToken?.user;
+  } catch (error) {
+    return res.sendStatus(401);
+  }
+  next();
+}
