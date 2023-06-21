@@ -20,6 +20,7 @@ router.post("/", async (req: AuthRequest, res: Response) => {
           image,
           userId: user.id,
         },
+        include: { user: true },
       });
       res.status(201).json(result);
     } catch (error) {
